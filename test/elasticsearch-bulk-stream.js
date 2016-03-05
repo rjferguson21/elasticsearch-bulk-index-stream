@@ -195,5 +195,29 @@ describe('ElastisearchBulkIndexWritable', function() {
             write(95);
             expect(self.client.bulk.callCount).to.eq(9);
         });
+
+        it('should emit flush event when data is written', function(done) {
+            this.client.bulk.yields(null, successResponseFixture);
+            var self = this;
+            var write = function(n) {
+                for (var i = 0; i < n; i++) {
+                    self.stream.write(recordFixture);
+                }
+            };
+
+            this.stream.on('flush', function(flush) {
+                expect(flush.writtenRecords).to.eq(self.stream.writtenRecords);
+                if (flush.writtenRecords === 95) {
+                    done();
+                }
+            });
+
+            write(95);
+            expect(self.client.bulk.callCount).to.eq(9);
+
+            setTimeout(function() {
+                expect(self.client.bulk.callCount).to.eq(10);
+            }, 40);
+        });
     });
 });

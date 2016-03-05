@@ -130,6 +130,10 @@ ElasticsearchBulkIndexWritable.prototype._flush = function _flush(callback) {
         this.writtenRecords += this.queue.length;
         this.queue = [];
 
+        this.emit('flush', {
+            writtenRecords: this.writtenRecords,
+            queue: this.queue.length
+        });
         callback();
     }.bind(this));
 };

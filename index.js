@@ -127,6 +127,8 @@ ElasticsearchBulkIndexWritable.prototype._flush = function _flush(callback) {
             this.logger.info('Wrote %d records to Elasticsearch', this.queue.length);
         }
 
+        var written = records.length / 2;
+        assert.equal(written, this.queue.length);
         this.writtenRecords += this.queue.length;
         this.queue = [];
 

@@ -219,5 +219,24 @@ describe('ElastisearchBulkIndexWritable', function() {
                 expect(self.client.bulk.callCount).to.eq(10);
             }, 40);
         });
+
+        it.only('should only remove from queue the size it writes', function(done) {
+            this.client.bulk.yields(null, successResponseFixture);
+            var self = this;
+            var write = function(n) {
+                for (var i = 0; i < n; i++) {
+                    self.stream.write(recordFixture);
+                }
+            };
+
+            write(5);
+            setTimeout(function() {
+                expect(self.stream.queue.length).to.eq(0);
+                write(15);
+                expect(self.client.bulk.callCount).to.eq(2);
+                expect(self.stream.queue.length).to.eq(5);
+                done();
+            }, 20);
+        });
     });
 });

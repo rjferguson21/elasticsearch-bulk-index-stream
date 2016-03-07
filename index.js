@@ -128,9 +128,8 @@ ElasticsearchBulkIndexWritable.prototype._flush = function _flush(callback) {
         }
 
         var written = records.length / 2;
-        assert.equal(written, this.queue.length);
-        this.writtenRecords += this.queue.length;
-        this.queue = [];
+        this.writtenRecords += written;
+        this.queue.splice(0, written);
 
         this.emit('flush', {
             writtenRecords: this.writtenRecords,

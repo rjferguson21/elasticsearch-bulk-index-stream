@@ -156,7 +156,7 @@ describe('ElastisearchBulkIndexWritable', function() {
 
         it('should throw error on body missing in record', getMissingFieldTest('body'));
     });
-    describe('timeout', function() {
+    describe('Timeout property should flush after flushTimeout', function() {
         beforeEach(function() {
             this.client = {
                 bulk: this.sinon.stub()
@@ -214,29 +214,42 @@ describe('ElastisearchBulkIndexWritable', function() {
 
             write(95);
             expect(self.client.bulk.callCount).to.eq(9);
-
-            setTimeout(function() {
-                expect(self.client.bulk.callCount).to.eq(10);
-            }, 40);
         });
-
-        it.only('should only remove from queue the size it writes', function(done) {
-            this.client.bulk.yields(null, successResponseFixture);
-            var self = this;
-            var write = function(n) {
-                for (var i = 0; i < n; i++) {
-                    self.stream.write(recordFixture);
-                }
+    });
+    describe('Timeout property with async', function() {
+        beforeEach(function() {
+            this.clock = sinon.useFakeTimers();
+            this.client = {
+                bulk: this.sinon.stub()
             };
 
-            write(5);
-            setTimeout(function() {
-                expect(self.stream.queue.length).to.eq(0);
-                write(15);
-                expect(self.client.bulk.callCount).to.eq(2);
-                expect(self.stream.queue.length).to.eq(5);
+            this.stream = new ElasticsearchBulkIndexWritable(this.client, {
+                highWaterMark: 10,
+                timeout: 10
+            });
+        });
+
+        afterEach(function() {
+            this.clock.restore();
+        });
+
+        it('should only remove from queue the size it writes', function(done) {
+            this.client.bulk.yieldsAsync(null, successResponseFixture);
+
+            var write = function(n) {
+                for (var i = 0; i < n; i++) {
+                    this.stream.write(recordFixture);
+                }
+            }.bind(this);
+
+            write(15);
+            expect(this.client.bulk.callCount).to.eq(1);
+
+            process.nextTick(function (){
+                expect(this.stream.queue.length).to.eq(5);
+                expect(this.stream.writtenRecords).to.eq(10);
                 done();
-            }, 20);
+            }.bind(this));
         });
     });
 });

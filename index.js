@@ -109,14 +109,15 @@ ElasticsearchBulkIndexWritable.prototype._flush = function _flush(callback) {
     }
 
     try {
-        var written = this.queue.length;
+        this.written = this.queue.length;
         var records = transformRecords(this.queue);
+        this.queue = [];
     } catch (error) {
         return callback(error);
     }
 
     if (this.logger) {
-        this.logger.debug('Writing %d records to Elasticsearch', this.queue.length);
+        this.logger.debug('Writing %d records to Elasticsearch', this.written);
     }
 
     this.bulkWrite(records, function(err) {
@@ -125,11 +126,10 @@ ElasticsearchBulkIndexWritable.prototype._flush = function _flush(callback) {
         }
 
         if (this.logger) {
-            this.logger.info('Wrote %d records to Elasticsearch', this.queue.length);
+            this.logger.info('Wrote %d records to Elasticsearch', this.written);
         }
 
-        this.queue.splice(0, written);
-        this.writtenRecords += written;
+        this.writtenRecords += this.written;
         this.emit('flush', {
             writtenRecords: this.writtenRecords,
             queue: this.queue.length

@@ -245,7 +245,7 @@ describe('ElastisearchBulkIndexWritable', function() {
             write(15);
             expect(this.client.bulk.callCount).to.eq(1);
 
-            process.nextTick(function (){
+            process.nextTick(function() {
                 expect(this.stream.queue.length).to.eq(5);
                 expect(this.stream.writtenRecords).to.eq(10);
                 done();

@@ -182,6 +182,40 @@ describe('ElastisearchBulkIndexWritable', function() {
             this.stream.write(recordFixture);
             this.clock.tick(1001);
             expect(this.client.bulk.callCount).to.eq(2);
+            expect(this.stream.writtenRecords).to.eq(11);
+        });
+    });
+    describe('ACK event', function() {
+        beforeEach(function() {
+            this.client = {
+                bulk: this.sinon.stub()
+            };
+
+            this.stream = new ElasticsearchBulkIndexWritable(this.client, {
+                highWaterMark: 10,
+                flushTimeout: 1000
+            });
+        });
+
+        it('should emit ACK event when data is written', function(done) {
+            this.client.bulk.yields(null, successResponseFixture);
+            this.clock = sinon.useFakeTimers();
+
+            this.stream.on('ACK', function(data) {
+                if (this.stream.writtenRecords === 95) {
+                    expect(data.count).to.eq(5);
+                    expect(this.client.bulk.callCount).to.eq(10);
+                    done();
+                } else {
+                    expect(data.count).to.eq(10);
+                }
+            }.bind(this));
+
+            for (var i = 0; i < 95; i++) {
+                this.stream.write(recordFixture);
+            }
+            this.clock.tick(2000);
+            expect(this.stream.writtenRecords).to.eq(95);
         });
     });
 });

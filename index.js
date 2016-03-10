@@ -132,6 +132,10 @@ ElasticsearchBulkIndexWritable.prototype._flush = function _flush(callback) {
         }
 
         this.writtenRecords += recordsCount;
+        this.emit('ACK', {
+            count: recordsCount,
+            queue: this.queue.length
+        });
 
         callback();
     }.bind(this));
